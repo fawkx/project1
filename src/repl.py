@@ -4,7 +4,7 @@ from .domain.book import Book
 from .services.book_service import BookService
 from .services.book_analytics_services import BookAnalyticsService
 from .repositories.book_repository import BookRepository
-import requests
+
 
 class BookREPL:
     def __init__(self, book_service, book_analytics_service):
@@ -13,48 +13,76 @@ class BookREPL:
         self.book_analytics_service = book_analytics_service
 
     def start(self):
-        print("Welcome to the book app! Type 'Help' for a list of commands!")
+        print("Welcome to the book app!")
         while self.running:
+            self.print_main_menu()
             cmd = input(">>>").strip()
             self.handle_command(cmd)
 
     def handle_command(self, cmd):
-        if cmd == "exit":
+        if cmd == "1":
+            self.get_all_records()
+        elif cmd == "2":
+            self.check_in_out()
+        elif cmd == "3":
+            self.add_book()
+        elif cmd == "4":
+            self.delete_book()
+        elif cmd == "5":
+            self.update_book()
+        elif cmd == "6":
+            self.find_book_by_name()
+        elif cmd == "7":
+            self.analytics()
+        elif cmd == "8":
             self.running = False
             print("Goodbye!")
-        elif cmd == "getAllRecords":
-            self.get_all_records()
-        elif cmd == "addBook":
-            self.add_book()
-        elif cmd == "findByName":
-            self.find_book_by_name()
-        elif cmd == "getJoke":
-            self.get_joke()
-        elif cmd == "deleteBook":
-            self.delete_book()
-        elif cmd == "updateBook":
-            self.update_book()
-        elif cmd == 'getAveragePrice':
-            self.get_average_price()
-        elif cmd == 'getTopBooks':
-            self.get_top_books()
-        elif cmd == 'getValueScore':
-            self.get_value_score()
-        elif cmd == 'getMedianPriceByGenre':
-            self.get_median_price_by_genre()
-        elif cmd == 'getPopularityZscores':
-            self.get_popularity_zscores()
-        elif cmd == "help":
-            print(
-                "Available commands: addBook, getAllRecords, findByName, deleteBook, updateBook, getJoke, getAveragePrice, getTopBooks, getValueScore, getMedianPriceByGenre, getPopularityZscores, help, exit"
-            )
         else:
             print("Please use a valid command!")
+    
+    def analytics(self):
+        while True:
+            self.print_analytics_menu()
+            cmd = input(">>> ").strip().lower()
+            if cmd == "1":
+                self.get_average_price()
+            elif cmd == "2":
+                self.get_top_books()
+            elif cmd == "3":
+                self.get_value_score()
+            elif cmd == "4":
+                self.get_median_price_by_genre()
+            elif cmd == "5":
+                self.most_popular_genre()
+            elif cmd == "6":
+                self.print_main_menu()
+                break
+            else:("Please select a valid analytics command!")
 
-    def get_popularity_zscores(self):
-        books = self.book_service.get_all_books()
-        zscore = self.book_analytics_service.popularity_zscores(books)
-        print(zscore)
+    def print_main_menu(self):
+        print(
+            "All commands\n"
+            "1. Print All Records  2. Check in/out  3. Add Book\n"
+            "4. Remove Book        5. Update Book   6. Find By Name\n"
+            "7. Analytics Menu     8. Exit\n"
+        )
+    
+    def print_analytics_menu(self):
+        print(
+            "All Analytics Services\n"
+            "1. Average Price\n"
+            "2. Top Books\n"  
+            "3. Value Scores\n"
+            "4. Avg Price by Genre\n"  
+            "5. Most Popular Genre\n"
+            "6. Back to Main Menu\n"
+        )
+
+    def check_in_out(self):
+        pass
+    
+    def most_popular_genre(self):
+        pass
 
     def get_median_price_by_genre(self):
         books = self.book_service.get_all_books()
@@ -75,19 +103,6 @@ class BookREPL:
         books = self.book_service.get_all_books()
         value_scores = self.book_analytics_service.value_scores_with_pandas(books)
         print(value_scores)
-
-    def get_joke(self):
-        try:
-            url = "https://api.chucknorris.io/jokes/random"
-            response = requests.get(url, timeout=5)
-            response.raise_for_status()
-            print(response.json()["value"])
-        except requests.exceptions.Timeout:
-            print("The request timed out.")
-        except requests.exceptions.RequestException as e:
-            print(f"HTTP Error: {e}")
-        except requests.exceptions.RequestException as e:
-            print(f"Something else went wrong: {e}")
 
     def get_all_records(self):
         books = self.book_service.get_all_books()

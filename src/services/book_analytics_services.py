@@ -74,33 +74,6 @@ class BookAnalyticsService:
 
         return result
 
-    def popularity_zscores(self, books: list[Book]) -> dict[str, float]:
-        # Compute z-score of ratings_count across books; return map book_id -> zscore.
-        # Handle zero variance.
-        result ={}
-        # Filter out books with missing data
-        valid_books = [b for b in books if b.ratings_count is not None]
-        
-        # Handle empty input
-        if not valid_books:
-            return result
-
-        ratings = np.array([b.average_rating for b in books])
-
-        # Compute mean and standard deviation
-        mean = ratings.mean()
-        std = ratings.std()
-
-        # Handle zero variance
-        if std == 0:
-            return {b.book_id: 0.0 for b in valid_books}
-        
-        # Compute z-scores
-        for b in valid_books:
-            result[b.book_id] = float((b.ratings_count - mean) / std)
-        
-        return result
-
     def top_rated_with_pandas(self, books: list, min_ratings: int = 1000, limit: int = 10) -> list:
         df = pd.DataFrame([{
             'book': b,

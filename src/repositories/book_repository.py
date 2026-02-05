@@ -32,8 +32,11 @@ class BookRepository(BookRepositoryProtocol):
         return ids
 
     def find_book_by_name(self, query) -> list[Book]:
+        if not isinstance(query, str):
+            raise TypeError("query must be a string")
+        q = query.strip().lower()
         books = self.get_all_books()
-        return [b for b in books if b.title == query]
+        return [b for b in books if q in (b.title or "").lower()]
 
     def delete_book(self, book_id: str) -> bool:
         """Delete a book by its book_id. Returns True if a book was deleted, False otherwise."""
@@ -63,7 +66,6 @@ class BookRepository(BookRepositoryProtocol):
                         setattr(b, key, value)
                 updated = True
                 break
-
         if not updated:
             return False
 

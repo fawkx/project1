@@ -48,7 +48,7 @@ The application will be organized into the following layers:
 
 ### 3. Repository Layer
 - Handles **data persistence and retrieval**.
-- JSON for P1, SQL for P2
+- JSON for P1
 - Responsibilities:
   - CRUD operations at the storage level
   - Abstract interfaces for swapping implementations
