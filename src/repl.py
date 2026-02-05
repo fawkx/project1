@@ -1,9 +1,12 @@
-from .services.book_generator_service_V2 import generate_books_json
-from .services.book_generator_bad_data_service import generate_books as get_bad_books
-from .domain.book import Book
-from .services.book_service import BookService
-from .services.book_analytics_services import BookAnalyticsService
-from .repositories.book_repository import BookRepository
+from datetime import datetime
+from src.services.book_generator_service_V2 import generate_books_json
+from src.services.book_generator_bad_data_service import generate_books as get_bad_books
+from src.domain.book import Book
+from src.domain.checkout_history import CheckoutRecord
+from src.services.book_service import BookService
+from src.services.book_analytics_services import BookAnalyticsService
+from src.repositories.book_repository import BookRepository
+from src.repositories.checkout_history_repository import CheckoutHistoryRepository
 
 
 class BookREPL:
@@ -79,8 +82,42 @@ class BookREPL:
         )
 
     def check_in_out(self):
-        pass
-    
+        repo = CheckoutHistoryRepository("checkout_history.json")
+
+        book_id = input("Enter book ID to check out/in: ").strip()
+        if not book_id:
+            print("No book ID provided.")
+            return
+
+        books = self.book_service.get_all_books()
+        book = next((b for b in books if getattr(b, "book_id", None) == book_id), None)
+        if not book:
+            print("No book found with that ID."); return
+
+        currently_available = True if getattr(book, "available", None) is None else bool(book.available)
+
+        try:
+            if currently_available:
+                user_id = input("User id (optional): ").strip() or None
+                self.book_service.update_book(book.book_id, {"available": False})
+                record = CheckoutRecord(book_id=book.book_id, user_id=user_id, checkout_at=datetime.utcnow())
+                repo.add_record(record)
+                print(f"Book {book.book_id} checked out (record {record.record_id}).")
+            else:
+                self.book_service.update_book(book.book_id, {"available": True})
+                raw = repo.find_by_book_id(book.book_id)  # may be CheckoutRecord or dict
+                # normalize to CheckoutRecord
+                records = [r if isinstance(r, CheckoutRecord) else CheckoutRecord.from_dict(r) for r in raw]
+                open_records = [r for r in records if not r.is_returned()]
+                if not open_records:
+                    print("Book checked in, but no open checkout record found."); return
+                latest = max(open_records, key=lambda r: r.checkout_at)
+                latest.mark_returned()
+                repo.update_record(latest.record_id, {"returned_at": latest.returned_at})
+                print(f"Book {book.book_id} checked in (record {latest.record_id} updated).")
+        except Exception as e:
+            print(f"Error during check in/out: {e}")
+
     def most_popular_genre(self):
         pass
 

@@ -12,7 +12,6 @@ def _from_iso(s: Optional[str]) -> Optional[datetime]:
 @dataclass
 class CheckoutRecord:
     book_id: str
-    user_id: Optional[str] = None
     checkout_at: datetime = field(default_factory=datetime.utcnow)
     returned_at: Optional[datetime] = None
     notes: Optional[str] = None
@@ -28,7 +27,6 @@ class CheckoutRecord:
         return {
             "record_id": self.record_id,
             "book_id": self.book_id,
-            "user_id": self.user_id,
             "checkout_at": _to_iso(self.checkout_at),
             "returned_at": _to_iso(self.returned_at),
             "notes": self.notes,
@@ -38,7 +36,6 @@ class CheckoutRecord:
     def from_dict(cls, data: dict) -> "CheckoutRecord":
         return cls(
             book_id=data["book_id"],
-            user_id=data.get("user_id"),
             checkout_at=_from_iso(data.get("checkout_at")) or datetime.utcnow(),
             returned_at=_from_iso(data.get("returned_at")),
             notes=data.get("notes"),

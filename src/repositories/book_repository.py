@@ -1,6 +1,6 @@
 import json
 from src.domain.book import Book
-from .book_repository_protocol import BookRepositoryProtocol
+from src.repositories.book_repository_protocol import BookRepositoryProtocol
 
 
 class BookRepository(BookRepositoryProtocol):
