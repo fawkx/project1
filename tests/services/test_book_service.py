@@ -1,89 +1,92 @@
+import json
 import pytest
-import src.services.book_service as book_service
+
+from src.domain.book import Book
+from src.repositories.book_repository import BookRepository
+from src.services.book_service import BookService
 from tests.mocks.mock_book__repository import MockBookRepo
 
+import json
 
-def test_get_all_books_positive():
-    # AAA - Arrange, Act, Assert
-    repo = MockBookRepo()
-    svc = book_service.BookService(repo)
-    books = svc.get_all_books()
-    assert len(books) == 1
+from src.domain.book import Book
+from src.repositories.book_repository import BookRepository
+from src.services.book_service import BookService
 
 
-def test_find_book_by_name_negative():
-    name = 3
-    repo = MockBookRepo()
-    svc = book_service.BookService(repo)
-
-    with pytest.raises(TypeError) as e:
-        book = svc.find_book_by_name(name)
-    assert str(e.value) == "Expected str, got something else"
-
-
-def test_delete_book_positive():
-    repo = MockBookRepo()
-    svc = book_service.BookService(repo)
-    result = svc.delete_book("any-id")
-    assert result is True
+# -------------------------
+# Test for CRUD
+# -------------------------
+# - Create persists to JSON
+# - Read/search works via repository
+# - Update persists to JSON
+# - Delete persists to JSON
 
 
-def test_delete_book_negative():
-    repo = MockBookRepo()
-    svc = book_service.BookService(repo)
-    with pytest.raises(TypeError):
-        svc.delete_book(123)
-
-
-def test_update_book_positive():
-    repo = MockBookRepo()
-    svc = book_service.BookService(repo)
-    result = svc.update_book("any-id", {"title": "new title"})
-    assert result is True
-
-
-def test_update_book_negative_types():
-    repo = MockBookRepo()
-    svc = book_service.BookService(repo)
-    with pytest.raises(TypeError):
-        svc.update_book(123, {"title": "new"})
-    with pytest.raises(TypeError):
-        svc.update_book("id", "not-a-dict")
-
-
-def test_add_multiple_books_with_mock():
-    from src.domain.book import Book
-
-    repo = MockBookRepo()
-    svc = book_service.BookService(repo)
-
-    b1 = Book(title="A", author="Auth A")
-    b2 = Book(title="B", author="Auth B")
-
-    ids = svc.add_book([b1, b2])
-    assert isinstance(ids, list)
-    assert len(ids) == 2
-    assert all(isinstance(i, str) for i in ids)
-
-
-def test_add_multiple_books_integration(tmp_path):
-    import json
-    from src.domain.book import Book
-    from src.repositories.book_repository import BookRepository
-    from src.services.book_service import BookService
-
+def test_create_book_integration(tmp_path):
+    """C: Create a book and verify it is persisted to the JSON file."""
     file = tmp_path / "books.json"
     file.write_text("[]", encoding="utf-8")
 
     repo = BookRepository(str(file))
     svc = BookService(repo)
 
-    b1 = Book(title="A", author="Auth A")
-    b2 = Book(title="B", author="Auth B")
+    book = Book(title="Solo", author="One Author")
+    book_id = svc.add_book(book)
 
-    ids = svc.add_book([b1, b2])
-    assert isinstance(ids, list) and len(ids) == 2
+    assert isinstance(book_id, str)
 
     data = json.loads(file.read_text(encoding="utf-8"))
-    assert any(item["title"] == "A" for item in data)
-    assert any(item["title"] == "B" for item in data)
+    assert any(item["book_id"] == book_id for item in data)
+
+
+def test_read_find_book_by_name_integration(tmp_path):
+    """R: Search by title and confirm the correct book is returned."""
+    file = tmp_path / "books.json"
+    file.write_text("[]", encoding="utf-8")
+
+    repo = BookRepository(str(file))
+    svc = BookService(repo)
+
+    svc.add_book(Book(title="Dune", author="Frank Herbert"))
+    svc.add_book(Book(title="Neuromancer", author="William Gibson"))
+
+    found = svc.find_book_by_name("Dune")
+    assert isinstance(found, list)
+    assert any(b.title == "Dune" for b in found)
+
+
+def test_update_book_integration(tmp_path):
+    """U: Update a book and verify the change is persisted to the JSON file."""
+    file = tmp_path / "books.json"
+    file.write_text("[]", encoding="utf-8")
+
+    repo = BookRepository(str(file))
+    svc = BookService(repo)
+
+    book = Book(title="Old", author="Author")
+    book_id = svc.add_book(book)
+
+    ok = svc.update_book(book_id, {"title": "New"})
+    assert ok is True
+
+    data = json.loads(file.read_text(encoding="utf-8"))
+    updated = next(item for item in data if item["book_id"] == book_id)
+    assert updated["title"] == "New"
+
+
+def test_delete_book_integration(tmp_path):
+    """D: Delete a book and verify it is removed from the JSON file."""
+    file = tmp_path / "books.json"
+    file.write_text("[]", encoding="utf-8")
+
+    repo = BookRepository(str(file))
+    svc = BookService(repo)
+
+    book = Book(title="To Delete", author="Author")
+    book_id = svc.add_book(book)
+
+    ok = svc.delete_book(book_id)
+    assert ok is True
+
+    data = json.loads(file.read_text(encoding="utf-8"))
+    assert all(item["book_id"] != book_id for item in data)

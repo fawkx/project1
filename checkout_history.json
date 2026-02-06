@@ -1,0 +1,14 @@
+[
+  {
+    "record_id": "93970847-3763-450b-8538-4efbff11f85a",
+    "book_id": "2fe2b996-10fb-410d-9766-4e4600aef21d",
+    "action": "check_out",
+    "timestamp": "2026-02-05T22:35:22.975399"
+  },
+  {
+    "record_id": "382f63c0-a036-4e76-b8c5-7a0f94b013f3",
+    "book_id": "00fe3d07-d414-4bde-9e0f-1fd3ccb925f4",
+    "action": "check_in",
+    "timestamp": "2026-02-05T22:52:31.042631"
+  }
+]

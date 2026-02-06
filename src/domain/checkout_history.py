@@ -1,43 +1,23 @@
 from dataclasses import dataclass, field
-from typing import Optional
 from datetime import datetime
 import uuid
 
-def _to_iso(dt: Optional[datetime]) -> Optional[str]:
-    return dt.isoformat() if dt else None
-
-def _from_iso(s: Optional[str]) -> Optional[datetime]:
-    return datetime.fromisoformat(s) if s else None
 
 @dataclass
 class CheckoutRecord:
     book_id: str
-    checkout_at: datetime = field(default_factory=datetime.utcnow)
-    returned_at: Optional[datetime] = None
-    notes: Optional[str] = None
+    action: str  # 'check_out' or 'check_in'
+    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     record_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
-    def mark_returned(self, returned_at: Optional[datetime] = None) -> None:
-        self.returned_at = returned_at or datetime.utcnow()
-
-    def is_returned(self) -> bool:
-        return self.returned_at is not None
+    @classmethod
+    def from_dict(cls, data: dict) -> "CheckoutRecord":
+        return cls(**data)
 
     def to_dict(self) -> dict:
         return {
             "record_id": self.record_id,
             "book_id": self.book_id,
-            "checkout_at": _to_iso(self.checkout_at),
-            "returned_at": _to_iso(self.returned_at),
-            "notes": self.notes,
+            "action": self.action,
+            "timestamp": self.timestamp,
         }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "CheckoutRecord":
-        return cls(
-            book_id=data["book_id"],
-            checkout_at=_from_iso(data.get("checkout_at")) or datetime.utcnow(),
-            returned_at=_from_iso(data.get("returned_at")),
-            notes=data.get("notes"),
-            record_id=data.get("record_id") or str(uuid.uuid4()),
-        )
