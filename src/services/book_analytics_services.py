@@ -11,12 +11,27 @@ from collections import Counter
 
 
 class BookAnalyticsService:
-
+    """
+    Analytics layer: computes statistics/aggregations over Book objects.
+    """
     def average_price(self, books: list[Book]) -> float:
+        """
+        Compute the mean book price across all books.
+        Note: if any prices are None, dtype=float converts them to nan.
+        """
         prices = np.array([b.price_usd for b in books], dtype=float)
         return float(prices.mean())
 
     def top_rated(self, books: list[Book], min_ratings: int = 1000, limit: int = 10):
+        """
+        Return the top-rated books that have at least `min_ratings` ratings.
+
+        Steps:
+        - Build arrays of ratings_count (for filtering)
+        - Filter the book list with a boolean mask
+        - Sort by score descending
+        with numpy
+        """
         ratings = np.array([b.ratings_count for b in books])
         counts = np.array([b.ratings_count for b in books])
 
@@ -34,6 +49,16 @@ class BookAnalyticsService:
 
     # value score = rating * log(ratings_count) / price
     def value_scores(self, books: list[Book]) -> dict[str, float]:
+        """
+        Compute a "value score" per book:
+            score = average_rating * log(1 + ratings_count) / price
+
+        Higher score means:
+        - higher ratings
+        - more rating confidence (more reviews)
+        - cheaper price
+        with numpy
+        """
         ratings = np.array([b.average_rating for b in books])
         counts = np.array([b.ratings_count for b in books])
         prices = np.array([b.price_usd for b in books])
@@ -50,9 +75,13 @@ class BookAnalyticsService:
         }
 
     def median_price_by_genre(self, books: list[Book]) -> dict[str, float]:
-        # Group books by genre, compute median price per genre.
-        # Return mapping genre -> median price.
-        # Edge: genres with no priced books; single-book genres.
+        """
+        Compute the median price per genre.
+
+        Edge cases handled:
+        - missing/None prices (filtered out)
+        - genres with no valid prices return NaN
+        """
         prices = np.array([b.price_usd for b in books], dtype=float)
         genres = np.array([b.genre for b in books])
         result = {}
@@ -77,6 +106,13 @@ class BookAnalyticsService:
     def top_rated_with_pandas(
         self, books: list, min_ratings: int = 1000, limit: int = 10
     ) -> list:
+        """
+        Pandas version of top rated:
+        - build DataFrame (book object + avg + count)
+        - filter by count threshold
+        - sort by avg desc
+        - return the book objects
+        """
         df = pd.DataFrame(
             [
                 {"book": b, "avg": b.average_rating, "count": b.ratings_count}
@@ -87,14 +123,11 @@ class BookAnalyticsService:
         return filtered["book"].tolist()[:limit]
 
     def most_common_genres(self, books: list[Book], top_n: int | None = None) -> dict[str, int]:
-        """Return genres frequency mapping, sorted by descending count.
+        """
+        Count how many books exist in each genre.
 
-        Args:
-            books: list of `Book` objects
-            top_n: if provided, limit to top N genres
-
-        Returns:
-            dict mapping genre -> count (ordered by most common first)
+        Returns an ordered mapping genre -> count (most common first).
+        Missing genres are normalized to "Unknown".
         """
         # Normalize missing genres to a readable label
         genres = [b.genre if (b.genre is not None and b.genre != "") else "Unknown" for b in books]
@@ -105,6 +138,12 @@ class BookAnalyticsService:
     def value_scores_with_pandas(
         self, books: list, limit: int = 10
     ) -> dict[str, float]:
+        """
+        Pandas version of value_scores:
+        - compute score column
+        - sort
+        - return top N as dict[book_id] -> score
+        """
         df = pd.DataFrame(
             [
                 {
@@ -134,8 +173,26 @@ class BookAnalyticsService:
         self,
         books: list[Book],
         m: int = 50,                 # minimum ratings threshold (50-100 recommended)
-        min_books_per_genre: int = 3 # optional: avoid tiny genres dominating
+        min_books_per_genre: int = 3
     ) -> dict[str, float]:
+        """
+        Compute Bayesian-weighted rating per genre.
+
+        Why Bayesian:
+        - Small sample sizes can inflate averages.
+        - Bayesian smoothing blends the genre mean with the global mean.
+
+        Variables:
+        - C: global mean rating across all books
+        - R: mean rating within the genre
+        - v: median ratings_count for the genre (confidence proxy)
+        - m: minimum confidence threshold (50–100 recommended)
+
+        weighted = (v/(v+m))*R + (m/(v+m))*C
+
+        Returns:
+        - ordered mapping genre -> weighted rating (descending)
+        """
         rows = []
         for b in books:
             # Skip bad/missing values
@@ -177,6 +234,10 @@ class BookAnalyticsService:
         return {row["genre"]: float(row["weighted_rating"]) for _, row in grp.iterrows()}
 
     def price_vs_rating_points(self, books: list[Book]) -> tuple[list[float], list[float]]:
+        """
+        Extract paired (price, rating) points for scatter plotting.
+        Skips books missing either value.
+        """
         prices = []
         ratings = []
 
@@ -188,6 +249,12 @@ class BookAnalyticsService:
         return prices, ratings
     
     def books_released_by_year(self, books: list[Book]) -> dict[int, int]:
+        """
+        Count how many books were published each year.
+
+        Returns:
+            dict[year] -> count
+        """
         years = []
 
         for b in books:
@@ -204,7 +271,13 @@ class BookAnalyticsService:
         return {int(year): int(count) for year, count in zip(unique, counts)}
 
     def availability_counts(self, books: list[Book]) -> dict[str, int]:
+        """
+        Count current availability status.
 
+        Note:
+        - This reflects current state only.
+        - History/trends require CheckoutHistoryRepository data.
+        """
         available = 0
         checked_out = 0
 

@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import os
 
 from src.services.book_generator_service_V2 import generate_books_json
-from src.services.book_generator_bad_data_service import generate_books as get_bad_books
 from src.domain.book import Book
 from src.domain.checkout_history import CheckoutRecord
 from src.services.book_service import BookService
@@ -18,7 +17,7 @@ class BookREPL:
     """
     BookREPL is the application layer
     
-    Responsibles:
+    Responsibilities:
         - Handle user input and menu navigation (REPL loop)
         - Call service -layer methods for CRUD and checkout operations
         - Display results and generate visualizations (matplotlib)
@@ -512,7 +511,6 @@ class BookREPL:
 
 if __name__ == "__main__":
     generate_books_json()
-    get_bad_books()
     repo = BookRepository("books.json")
     history_repo = CheckoutHistoryRepository("checkout_history.json")
     book_svc = BookService(repo, history_repo)
