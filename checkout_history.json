@@ -10,5 +10,11 @@
     "book_id": "00fe3d07-d414-4bde-9e0f-1fd3ccb925f4",
     "action": "check_in",
     "timestamp": "2026-02-05T22:52:31.042631"
+  },
+  {
+    "record_id": "193ccd14-b8f7-4e57-8d80-5df4db02e627",
+    "book_id": "78cc8cff-e2a1-4e7e-9871-48df958308ea",
+    "action": "check_in",
+    "timestamp": "2026-02-06T17:01:14.250366"
   }
 ]

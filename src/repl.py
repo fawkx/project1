@@ -214,7 +214,7 @@ class BookREPL:
         except Exception as e:
             print(f"Error generating genre chart: {e}")
     
-    def highest_rated_genres(self, m: int = 80):
+    def highest_rated_genres(self, m: int = 50):
         """
         Create a bar chart ranking genres by Bayesian weighted rating.
         """
@@ -393,7 +393,7 @@ class BookREPL:
         """
         books = self.book_service.get_all_books()
         avg_price = self.book_analytics_service.average_price(books)
-        print(avg_price)
+        print("Average price: ", avg_price)
 
     def get_top_books(self):
         """
@@ -452,7 +452,7 @@ class BookREPL:
                 b = to_add[0]       
                 print(f"Book added: {b.title} by {b.author}")
         except Exception as e:
-            print(f"Error adding book: {e}")     
+            print(f"Error adding book: {e}")
 
     def find_book_by_name(self):
         """
